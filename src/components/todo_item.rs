@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use web_sys::KeyboardEvent;
+use web_sys::{HtmlInputElement, KeyboardEvent};
 
 use crate::models::{Todo, UpdateTodo};
 
@@ -13,6 +13,7 @@ pub fn TodoItem(todo: Todo, set_todos: WriteSignal<Vec<Todo>>) -> impl IntoView 
     let (title, set_title) = signal(initial_title.clone());
     let (editing, set_editing) = signal(false);
     let (edit_text, set_edit_text) = signal(initial_title);
+    let edit_input_ref = NodeRef::<leptos::html::Input>::new();
 
     // Toggle completed
     let on_toggle = move |_| {
@@ -81,10 +82,20 @@ pub fn TodoItem(todo: Todo, set_todos: WriteSignal<Vec<Todo>>) -> impl IntoView 
         delete_todo();
     };
 
-    // Double-click to enter edit mode
+    // Double-click to enter edit mode with focus management
     let on_dblclick = move |_| {
         set_edit_text.set(title.get());
         set_editing.set(true);
+        // Focus the edit input after it renders
+        request_animation_frame(move || {
+            if let Some(input) = edit_input_ref.get() {
+                let el: &HtmlInputElement = &input;
+                let _ = el.focus();
+                // Move cursor to end of text
+                let len = el.value().len() as u32;
+                let _ = el.set_selection_range(len, len);
+            }
+        });
     };
 
     // Save edit: if blank, delete; otherwise PATCH title
@@ -175,13 +186,13 @@ pub fn TodoItem(todo: Todo, set_todos: WriteSignal<Vec<Todo>>) -> impl IntoView 
                     Some(view! {
                         <input
                             class="edit"
+                            node_ref=edit_input_ref
                             prop:value=move || edit_text.get()
                             on:input=move |ev| {
                                 set_edit_text.set(event_target_value(&ev));
                             }
                             on:keydown=on_keydown
                             on:blur=on_blur
-                            autofocus=true
                         />
                     })
                 } else {
