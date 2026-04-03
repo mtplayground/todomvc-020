@@ -1,0 +1,23 @@
+# Build artifacts
+target/
+node_modules/
+
+# Environment / secrets
+.gh_token
+.database_url
+.github_token
+
+# Agent metadata
+.claude/
+.task_id
+.container_name
+.app_name
+.gh_user
+.pipeline-state.json
+.gitkeep
+.progress
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal

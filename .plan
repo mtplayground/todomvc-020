@@ -1,0 +1,65 @@
+# TodoMVC Architecture Plan
+## Leptos CSR + Axum + SQLite
+
+### Project Structure
+```
+Cargo.toml              # Workspace root with leptos, axum, sqlx, tokio, serde
+rust-toolchain.toml     # Nightly toolchain (required by Leptos)
+tailwind.config.js      # Tailwind CSS config scanning .rs files
+style/input.css         # Tailwind directives + TodoMVC base styles
+migrations/
+  001_create_todos.sql  # todos table: id, title, completed, display_order
+src/
+  main.rs               # Axum server: serves static files + API routes
+  app.rs                # Leptos root App component, reactive state, filtering
+  db.rs                 # SQLite pool init, embedded migrations
+  models.rs             # Todo, CreateTodo, UpdateTodo (serde, sqlx derives)
+  api.rs                # REST handlers: CRUD + toggle-all + clear-completed
+  components/
+    mod.rs              # Re-exports
+    header.rs           # TodoHeader: title + input + toggle-all chevron
+    todo_item.rs        # TodoItem: display, toggle, delete, inline edit
+    footer.rs           # TodoFooter: count, filters (#/ hash routing), clear
+tests/
+  api_tests.rs          # Integration tests against in-memory SQLite
+  e2e_tests.rs          # Full user-flow tests
+.github/workflows/
+  ci.yml                # clippy, fmt, test, build
+README.md
+```
+
+### Issue Dependency Graph
+```
+Phase 1 - Foundation:
+  #1 Cargo workspace + Leptos + Axum
+    ├── #2 Tailwind CSS
+    ├── #3 SQLite + migrations
+    └── #4 CI pipeline
+
+Phase 2 - Backend:
+  #3 → #5 Todo model + shared types
+  #5 → #6 CRUD endpoints
+  #6 → #7 Bulk operations (toggle-all, clear-completed)
+  #7 → #8 API integration tests
+
+Phase 3 - Frontend:
+  #6 → #9  TodoHeader component
+  #9 → #10 TodoItem (toggle + delete)
+  #10 → #11 Inline editing
+  #10 → #12 TodoFooter (filters)
+  #11 + #12 → #13 Toggle-all + wire up App
+
+Phase 4 - Polish:
+  #13 → #14 TodoMVC styling
+  #14 → #15 Edge cases + empty states
+  #15 → #16 E2E tests + README
+```
+
+### Key Design Decisions
+1. **Leptos CSR mode** — client-side rendering, Axum serves static assets + JSON API
+2. **Single crate** — no workspace splitting; frontend and backend in one crate with feature flags via cargo-leptos
+3. **SQLite via sqlx** — compile-time checked queries, embedded migrations, in-memory DB for tests
+4. **Hash-based routing** — `#/`, `#/active`, `#/completed` per TodoMVC spec (no server-side routing needed)
+5. **Reactive signals** — Leptos signals for todo list, filter state; API calls update signals
+6. **Tailwind CSS** — utility classes in .rs view macros, scanned by tailwind.config.js
+7. **display_order column** — future-proofs ordering; default to insertion order
