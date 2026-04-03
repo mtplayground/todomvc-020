@@ -1,0 +1,7 @@
+.git
+.claude
+.gh_token
+.github_token
+target/debug
+target/wasm32-unknown-unknown
+node_modules

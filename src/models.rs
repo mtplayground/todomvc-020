@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 /// A todo item as stored in the database.
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(sqlx::FromRow))]
 pub struct Todo {
     pub id: i64,
     pub title: String,
