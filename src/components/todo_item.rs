@@ -1,14 +1,20 @@
 use leptos::prelude::*;
+use web_sys::KeyboardEvent;
 
 use crate::models::{Todo, UpdateTodo};
 
-/// Renders a single todo item with checkbox toggle and destroy button.
+/// Renders a single todo item with checkbox toggle, destroy button, and inline editing.
+/// Double-click the label to edit. Enter saves, Escape cancels, blank save deletes.
 #[component]
 pub fn TodoItem(todo: Todo, set_todos: WriteSignal<Vec<Todo>>) -> impl IntoView {
     let todo_id = todo.id;
-    let initial_completed = todo.completed;
-    let (completed, set_completed) = signal(initial_completed);
+    let initial_title = todo.title.clone();
+    let (completed, set_completed) = signal(todo.completed);
+    let (title, set_title) = signal(initial_title.clone());
+    let (editing, set_editing) = signal(false);
+    let (edit_text, set_edit_text) = signal(initial_title);
 
+    // Toggle completed
     let on_toggle = move |_| {
         let new_completed = !completed.get();
         set_completed.set(new_completed);
@@ -48,7 +54,8 @@ pub fn TodoItem(todo: Todo, set_todos: WriteSignal<Vec<Todo>>) -> impl IntoView 
         });
     };
 
-    let on_destroy = move |_| {
+    // Delete todo
+    let delete_todo = move || {
         leptos::task::spawn_local(async move {
             let result = gloo_net::http::Request::delete(&format!("/api/todos/{todo_id}"))
                 .send()
@@ -70,8 +77,89 @@ pub fn TodoItem(todo: Todo, set_todos: WriteSignal<Vec<Todo>>) -> impl IntoView 
         });
     };
 
+    let on_destroy = move |_| {
+        delete_todo();
+    };
+
+    // Double-click to enter edit mode
+    let on_dblclick = move |_| {
+        set_edit_text.set(title.get());
+        set_editing.set(true);
+    };
+
+    // Save edit: if blank, delete; otherwise PATCH title
+    let save_edit = move || {
+        let trimmed = edit_text.get().trim().to_string();
+        set_editing.set(false);
+
+        if trimmed.is_empty() {
+            delete_todo();
+            return;
+        }
+
+        if trimmed == title.get() {
+            return;
+        }
+
+        set_title.set(trimmed.clone());
+
+        let payload = UpdateTodo {
+            title: Some(trimmed),
+            completed: None,
+            display_order: None,
+        };
+
+        leptos::task::spawn_local(async move {
+            let result = gloo_net::http::Request::patch(&format!("/api/todos/{todo_id}"))
+                .json(&payload)
+                .expect("failed to serialize")
+                .send()
+                .await;
+
+            match result {
+                Ok(resp) if resp.ok() => {
+                    if let Ok(updated) = resp.json::<Todo>().await {
+                        set_title.set(updated.title.clone());
+                        set_todos.update(|todos| {
+                            if let Some(t) = todos.iter_mut().find(|t| t.id == todo_id) {
+                                *t = updated;
+                            }
+                        });
+                    }
+                }
+                Ok(resp) => {
+                    leptos::logging::error!("edit save failed: {}", resp.status());
+                }
+                Err(e) => {
+                    leptos::logging::error!("network error saving edit: {e}");
+                }
+            }
+        });
+    };
+
+    // Cancel edit
+    let cancel_edit = move || {
+        set_edit_text.set(title.get());
+        set_editing.set(false);
+    };
+
+    let on_keydown = move |ev: KeyboardEvent| match ev.key().as_str() {
+        "Enter" => save_edit(),
+        "Escape" => cancel_edit(),
+        _ => {}
+    };
+
+    let on_blur = move |_| {
+        if editing.get() {
+            save_edit();
+        }
+    };
+
     view! {
-        <li class:completed=move || completed.get()>
+        <li
+            class:completed=move || completed.get()
+            class:editing=move || editing.get()
+        >
             <div class="view">
                 <input
                     class="toggle"
@@ -79,9 +167,27 @@ pub fn TodoItem(todo: Todo, set_todos: WriteSignal<Vec<Todo>>) -> impl IntoView 
                     prop:checked=move || completed.get()
                     on:change=on_toggle
                 />
-                <label>{todo.title.clone()}</label>
+                <label on:dblclick=on_dblclick>{move || title.get()}</label>
                 <button class="destroy" on:click=on_destroy></button>
             </div>
+            {move || {
+                if editing.get() {
+                    Some(view! {
+                        <input
+                            class="edit"
+                            prop:value=move || edit_text.get()
+                            on:input=move |ev| {
+                                set_edit_text.set(event_target_value(&ev));
+                            }
+                            on:keydown=on_keydown
+                            on:blur=on_blur
+                            autofocus=true
+                        />
+                    })
+                } else {
+                    None
+                }
+            }}
         </li>
     }
 }
