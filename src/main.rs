@@ -1,3 +1,4 @@
+use axum::routing::{delete, get, patch, post};
 use axum::Router;
 use std::net::SocketAddr;
 use tower_http::services::ServeDir;
@@ -15,7 +16,13 @@ async fn main() {
         .await
         .expect("failed to initialize database");
 
-    let app = Router::new()
+    let api = Router::new()
+        .route("/api/todos", get(todomvc::api::list_todos))
+        .route("/api/todos", post(todomvc::api::create_todo))
+        .route("/api/todos/{id}", patch(todomvc::api::update_todo))
+        .route("/api/todos/{id}", delete(todomvc::api::delete_todo));
+
+    let app = api
         .with_state(pool)
         .fallback_service(ServeDir::new("target/site"));
 
