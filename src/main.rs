@@ -11,7 +11,13 @@ async fn main() {
         )
         .init();
 
-    let app = Router::new().fallback_service(ServeDir::new("target/site"));
+    let pool = todomvc::db::init_pool()
+        .await
+        .expect("failed to initialize database");
+
+    let app = Router::new()
+        .with_state(pool)
+        .fallback_service(ServeDir::new("target/site"));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     tracing::info!("listening on {}", addr);
