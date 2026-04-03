@@ -20,7 +20,12 @@ async fn main() {
         .route("/api/todos", get(todomvc::api::list_todos))
         .route("/api/todos", post(todomvc::api::create_todo))
         .route("/api/todos/{id}", patch(todomvc::api::update_todo))
-        .route("/api/todos/{id}", delete(todomvc::api::delete_todo));
+        .route("/api/todos/{id}", delete(todomvc::api::delete_todo))
+        .route("/api/todos/toggle-all", patch(todomvc::api::toggle_all))
+        .route(
+            "/api/todos/completed",
+            delete(todomvc::api::clear_completed),
+        );
 
     let app = api
         .with_state(pool)
