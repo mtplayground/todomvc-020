@@ -121,7 +121,15 @@ pub fn App() -> impl IntoView {
                     </For>
                 </ul>
             </section>
-            <TodoFooter todos=todos set_todos=set_todos filter=filter set_filter=set_filter />
+            {move || {
+                if has_todos() {
+                    Some(view! {
+                        <TodoFooter todos=todos set_todos=set_todos filter=filter set_filter=set_filter />
+                    })
+                } else {
+                    None
+                }
+            }}
         </section>
         <footer class="info">
             <p>"Double-click to edit a todo"</p>
