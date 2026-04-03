@@ -15,6 +15,12 @@ pub struct CreateTodo {
     pub title: String,
 }
 
+/// Request body for toggling all todos.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ToggleAll {
+    pub completed: bool,
+}
+
 /// Request body for updating an existing todo.
 /// All fields are optional — only provided fields are updated.
 #[derive(Debug, Clone, Deserialize)]

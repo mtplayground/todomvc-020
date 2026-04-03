@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use sqlx::SqlitePool;
 
-use crate::models::{CreateTodo, Todo, UpdateTodo};
+use crate::models::{CreateTodo, Todo, ToggleAll, UpdateTodo};
 
 pub async fn list_todos(State(pool): State<SqlitePool>) -> impl IntoResponse {
     match sqlx::query_as::<_, Todo>(
@@ -114,6 +114,52 @@ pub async fn delete_todo(State(pool): State<SqlitePool>, Path(id): Path<i64>) ->
         Ok(_) => StatusCode::NOT_FOUND.into_response(),
         Err(e) => {
             tracing::error!("failed to delete todo {id}: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+/// Toggle all todos to the given completed state.
+/// Request body: `{ "completed": true/false }`
+pub async fn toggle_all(
+    State(pool): State<SqlitePool>,
+    Json(input): Json<ToggleAll>,
+) -> impl IntoResponse {
+    match sqlx::query("UPDATE todos SET completed = ?")
+        .bind(input.completed)
+        .execute(&pool)
+        .await
+    {
+        Ok(_) => {
+            match sqlx::query_as::<_, Todo>(
+                "SELECT id, title, completed, display_order FROM todos ORDER BY display_order, id",
+            )
+            .fetch_all(&pool)
+            .await
+            {
+                Ok(todos) => Json(todos).into_response(),
+                Err(e) => {
+                    tracing::error!("failed to list todos after toggle-all: {e}");
+                    StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                }
+            }
+        }
+        Err(e) => {
+            tracing::error!("failed to toggle all todos: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+/// Delete all completed todos.
+pub async fn clear_completed(State(pool): State<SqlitePool>) -> impl IntoResponse {
+    match sqlx::query("DELETE FROM todos WHERE completed = TRUE")
+        .execute(&pool)
+        .await
+    {
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => {
+            tracing::error!("failed to clear completed todos: {e}");
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
