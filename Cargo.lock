@@ -2481,6 +2481,7 @@ name = "todomvc"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "gloo-net",
  "http-body-util",
  "leptos",
  "serde",
@@ -2491,6 +2492,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "web-sys",
 ]
 
 [[package]]
