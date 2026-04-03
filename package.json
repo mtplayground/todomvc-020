@@ -1,0 +1,13 @@
+{
+  "name": "todomvc",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "tailwind:build": "npx @tailwindcss/cli -i style/input.css -o style/output.css --minify",
+    "tailwind:watch": "npx @tailwindcss/cli -i style/input.css -o style/output.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.2",
+    "tailwindcss": "^4.2.2"
+  }
+}

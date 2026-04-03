@@ -1,1 +1,3 @@
-/* Placeholder for Tailwind CSS — configured in issue #2 */
+@import "tailwindcss";
+
+@source "../src/**/*.rs";

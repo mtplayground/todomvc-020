@@ -1,6 +1,7 @@
 # Build artifacts
 target/
 node_modules/
+style/output.css
 
 # Environment / secrets
 .gh_token
