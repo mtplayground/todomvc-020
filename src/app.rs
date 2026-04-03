@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
 use crate::components::header::TodoHeader;
+use crate::components::todo_item::TodoItem;
 use crate::models::Todo;
 
 /// Root application component for the TodoMVC app.
@@ -31,13 +32,7 @@ pub fn App() -> impl IntoView {
                         key=|todo| todo.id
                         let:todo
                     >
-                        <li class:completed=todo.completed>
-                            <div class="view">
-                                <input class="toggle" type="checkbox" prop:checked=todo.completed />
-                                <label>{todo.title.clone()}</label>
-                                <button class="destroy"></button>
-                            </div>
-                        </li>
+                        <TodoItem todo=todo set_todos=set_todos />
                     </For>
                 </ul>
             </section>
