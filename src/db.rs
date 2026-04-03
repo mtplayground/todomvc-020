@@ -10,8 +10,7 @@ pub async fn init_pool() -> Result<SqlitePool, sqlx::Error> {
     let database_url =
         std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://todos.db?mode=rwc".to_string());
 
-    let connect_options = SqliteConnectOptions::from_str(&database_url)?
-        .create_if_missing(true);
+    let connect_options = SqliteConnectOptions::from_str(&database_url)?.create_if_missing(true);
 
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
