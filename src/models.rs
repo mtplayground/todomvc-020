@@ -10,20 +10,20 @@ pub struct Todo {
 }
 
 /// Request body for creating a new todo.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateTodo {
     pub title: String,
 }
 
 /// Request body for toggling all todos.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToggleAll {
     pub completed: bool,
 }
 
 /// Request body for updating an existing todo.
 /// All fields are optional — only provided fields are updated.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateTodo {
     pub title: Option<String>,
     pub completed: Option<bool>,
